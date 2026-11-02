@@ -19,8 +19,10 @@ old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
 black = np.zeros_like(old_gray)
 rectangle = cv.rectangle(black, (0,100), (old_gray.shape[1]//2-50, old_gray.shape[0]), (255,255,255), -1)
 
+# MASK FOR DRAWING PURPOSE
 mask = np.zeros_like(old_frame)
 
+# FOR GIF
 fps = cap.get(cv.CAP_PROP_FPS)
 if fps <= 0:
     fps = 30
@@ -33,52 +35,58 @@ check = 0
 gif_frame = []
 
 while(1):
+
+    # READ THE FRAMES
     ret, frame = cap.read()
     if not ret:
         print('No frames grabbed!')
         break
 
     frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
+    # DETECTING NEW FEATURES EVERY 50 FRAMES
     if (check%50 == 0):
         p0 = cv.goodFeaturesToTrack(old_gray, mask = black, **feature_params)
 
-    # calculate optical flow
+    # OPTICAL FLOW
     p1, st, err = cv.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
 
-    # Select good points
+    # GOOD POINTS
     if p1 is not None:
         good_new = p1[st==1]
         good_old = p0[st==1]
 
-    # draw the tracks
+    # TRACKING THE POINTS
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         a, b = new.ravel()
         c, d = old.ravel()
         mask = cv.line(mask, (int(a), int(b)), (int(c), int(d)), (0,0,255), 2)
         frame = cv.circle(frame, (int(a), int(b)), 5, (255,255,255), -1)
-        # frame2 = cv.rectangle(frame, (0,0), (frame.shape[1]//2-50, frame.shape[0]), (0,0,0), -1)
 
+    # PRESS C IF YOU WANT TO CLEAR THE TRACKING POINTS    
     if ((cv.waitKey(30) & 0xff) == ord('c')):
         mask = np.zeros_like(frame)
         check = -1
-        
-    
-    img = cv.add(frame, mask)
-    # img = cv.add(img, rectangle)
 
+    # ADD THE NEW LINES TO THE FRAME FROM THE MASK
+    img = cv.add(frame, mask)
+
+    # FOR GIF
     gif_frame.append(img)
+
 
     cv.imshow('frame', img)
     k = cv.waitKey(30) & 0xff
     if k == 27:
         break
     
-    # Now update the previous frame and previous points
+    # UPDATING THE FRAMES ( PREVIOUS AND CURRENT )
     old_gray = frame_gray.copy()
     p0 = good_new.reshape(-1, 1, 2)
 
     check = check + 1
 
+    # FOR GIF
     out.write(img)
 
 cap.release()
