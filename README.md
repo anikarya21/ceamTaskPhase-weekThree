@@ -24,4 +24,4 @@ This is for Ceam Task Phase - Week 2.
 
 ## Animated GIF
 
-![GIF](animation.gif)
+![ANIMATED GIF](animation.gif)
